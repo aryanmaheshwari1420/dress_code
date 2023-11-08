@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dress_code/model/product.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,12 +12,25 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Map<String, dynamic> products = {};
+  late Future<Product> productData;
 
   @override
   void initState() {
-    fetchDataFromAPI();
     super.initState();
+    productData = fetchDataFromAPI();
+  }
+
+  Future<Product> fetchDataFromAPI() async {
+    final url = Uri.parse(
+        'https://storeapi.wekreta.in/api/v4/product/customer?id=0&secondaryKey=3d70712a-26fb-11ee-b277-029ff3b26cce&productName=&categoryName=serveware,kitchenware&subCategoryName=&subSubCategoryName=&brandName=&isFeatured=0&search=&currentPage=1&itemsPerPage=27&sortBy=createdDate&sortOrder=desc&isFetchListing=0&searchTag=&storeUuid=cb910d4a-bf60-11ed-814d-0252190a7100');
+
+    final response = await http.get(url);
+    var data = jsonDecode(response.body.toString());
+    if (response.statusCode == 200) {
+      return Product.fromJson(data);
+    } else {
+      throw Exception('Failed to load data');
+    }
   }
 
   @override
@@ -25,46 +39,75 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text('Product List'),
       ),
-      body: SafeArea(
-        child: ListView.builder(
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products['data'][index]; // Access the 'data' key
-            return Container(
-              margin: EdgeInsets.all(8.0),
-              padding: EdgeInsets.all(8.0),
+      body: FutureBuilder<Product>(
+        future: productData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final data = snapshot.data?.object;
+            if (data != null) {
+              return GridView.builder(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 2,
+  ),
+  itemCount: data.length,
+  itemBuilder: (context, index) {
+    return Container(
+      width: 200,
+      height: 200,
+      margin: EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
+                image: DecorationImage(
+                  image: NetworkImage(data[index].mediaUrl),
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: ListTile(
-                title: Text(product['productName']),
-                subtitle: Text('Category: ${product['categoryName']}'),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              padding: EdgeInsets.all(8.0),
+              color: Colors.white, 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data[index].name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Other information here', // Replace with your desired text
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
+      ),
+    );
+  },
+);
+
+            } else {
+              return Center(child: Text("Data is null"));
+            }
+          } else {
+            return Center(child: Text("Unknown error"));
+          }
+        },
       ),
     );
   }
-
-  Future<void> fetchDataFromAPI() async {
-  final url = Uri.parse(
-    'https://storeapi.wekreta.in/api/v4/product/customer?id=0&secondaryKey=3d70712a-26fb-11ee-b277-029ff3b26cce&productName=&categoryName=serveware+kitchenware&subCategoryName=&subSubCategoryName=&brandName=&isFeatured=0&search=&currentPage=1&itemsPerPage=27&sortBy=created+Date&sortOrder=desc&isFetchListing=0&searchTag=&storeUuid=cb910d4a-bf60-11ed-814d-0252190a7100');
-
-  try {
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      print(jsonData); 
-      setState(() {
-        products = jsonData; 
-      });
-    } else {
-      print('Failed to fetch data: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('Error: $e');
-  }
-}
-
 }
