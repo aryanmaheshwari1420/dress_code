@@ -37,69 +37,74 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Product List'),
+        title: const Text('Product List'),
       ),
       body: FutureBuilder<Product>(
         future: productData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             final data = snapshot.data?.object;
             if (data != null) {
               return GridView.builder(
-  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-  ),
-  itemCount: data.length,
-  itemBuilder: (context, index) {
-    return Container(
-      width: 200,
-      height: 200,
-      margin: EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(data[index].mediaUrl),
-                  fit: BoxFit.cover,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
                 ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              color: Colors.white, 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data[index].name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 200,
+                    height: 200,
+                    margin: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 100, // Adjust the height as needed
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: NetworkImage(data[index].mediaUrl),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          height: 80, // Adjust the height as needed
+                          color: Colors
+                              .white, // Background color for the text area
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data[index].name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                data[index]
+                                    .category[0]
+                                    .name, // Access the first category's name
+                              ),
+                              Text(
+                                data[index].variants[0].sellingPrice.toString(),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Other information here', // Replace with your desired text
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  },
-);
-
+                  );
+                },
+              );
             } else {
               return Center(child: Text("Data is null"));
             }
